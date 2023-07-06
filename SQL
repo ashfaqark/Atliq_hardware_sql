@@ -83,3 +83,44 @@ g.fiscal_year = get_fiscal_year(s.date)
 WHERE customer_code = 90002002
 group by s.date
 order by s.date asc;
+
+
+***************************************************************************
+---------------------------------------------------------------------------
+***************************************************************************
+
+-- Generate a yearly report for Croma India where there are two columns
+-- 1. Fiscal Year
+-- 2. Total Gross Sales amount In that year from Croma
+
+**************************************************************************
+
+USING DIRECT FISCAL YEAR FROM GROSS PRICE TABLE
+
+	SELECT 
+		 g.fiscal_year,
+		SUM(ROUND(g.gross_price*s.sold_quantity, 2)) as gross_total_price
+	FROM fact_sales_monthly s
+	join fact_gross_price g on 
+	g.product_code = s.product_code and
+	g.fiscal_year = get_fiscal_year(s.date)
+	WHERE customer_code = 90002002
+	-- group by g.fiscal_year
+	group by g.fiscal_year;
+
+***************************************************************************
+
+USING FUNCTION TO EXTRACT FISCAL YEAR 
+
+   select
+            get_fiscal_year(date) as fiscal_year,
+            sum(round(sold_quantity*g.gross_price,2)) as yearly_sales
+	from fact_sales_monthly s
+	join fact_gross_price g
+	on 
+	    g.fiscal_year=get_fiscal_year(s.date) and
+	    g.product_code=s.product_code
+	where
+	    customer_code=90002002
+	group by get_fiscal_year(date)
+	order by fiscal_year;
