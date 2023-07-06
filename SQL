@@ -1,0 +1,63 @@
+Q. generate a report of individual product sales (aggregated on a monthly basis at the product code level) for Croma India customer for FY-2021 so that I can track individual product sales and run further product analytics on it in excel.
+The report should have the following fields,
+1. Month
+2. Product Name
+3. Variant
+4. Sold Quantity
+5. Gross Price Per Item
+6. Gross Price Total
+
+**********FUNCTION TO GET FISCAL YEAR**********
+CREATE DEFINER=`root`@`localhost` FUNCTION `get_fiscal_year`(
+	calender_date date
+) RETURNS int
+    DETERMINISTIC
+BEGIN
+	declare fiscal_year INT;
+    set fiscal_year = YEAR(date_add(calender_date, INTERVAL 4 month));
+	RETURN fiscal_year;
+END
+
+*******************************************************
+
+**********FUNCTION TO GET FISCAL YEAR QUARTER**********
+
+CREATE DEFINER=`root`@`localhost` FUNCTION `get_fiscal_quarter`(
+	calender_date date
+) RETURNS char(2) CHARSET utf8mb4
+    DETERMINISTIC
+BEGIN
+		declare m TINYINT;
+        declare qtr char(2);
+        set m = month(calender_date);
+	case
+        WHEN m IN (9,10,11) THEN 
+			set qtr = "Q!";
+		WHEN m IN (12,1,2) THEN 
+			set qtr = "Q2";
+		WHEN m IN (3,4,5) THEN 
+			set qtr = "Q3";
+        ELSE 
+			set qtr = "Q4";
+    END CASE;
+RETURN qtr;
+END
+
+************************************************************
+
+SELECT s.date, g.fiscal_year,
+      s.product_code,
+      p.product, p.variant,s.sold_quantity, 
+      g.gross_price, 
+      ROUND(g.gross_price*s.sold_quantity, 2) as gross_total_price
+FROM fact_sales_monthly s
+join dim_product p on 
+      s.product_code = p.product_code
+join fact_gross_price g on 
+      g.product_code = s.product_code and
+      g.fiscal_year = get_fiscal_year(s.date)
+WHERE
+	    customer_code = 90002002 and 
+      get_fiscal_year(date) = 2021 
+   -- and get_fiscal_quarter(date) = "Q4"
+order by date asc;
