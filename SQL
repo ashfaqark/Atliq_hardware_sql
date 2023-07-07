@@ -1,11 +1,25 @@
-Q. generate a report of individual product sales (aggregated on a monthly basis at the product code level) for Croma India customer for FY-2021 so that I can track individual product sales and run further product analytics on it in excel.
-The report should have the following fields,
-1. Month
-2. Product Name
-3. Variant
-4. Sold Quantity
-5. Gross Price Per Item
-6. Gross Price Total
+**********STORED PROCEDURE TO GET MONTHLY GROSS SALES FOR CUSTOMER USING CUSTOMER CODE**********************
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_monthly_gross_total_customer`(
+	in_customer_codes TEXT
+)
+BEGIN
+SELECT 
+	s.date, 
+	sum(ROUND(g.gross_price*s.sold_quantity, 2)) as gross_total_price, Max(c.customer) as Customer
+FROM fact_sales_monthly s
+join fact_gross_price g on 
+g.product_code = s.product_code and
+g.fiscal_year = get_fiscal_year(s.date)
+join dim_customer c on
+c.customer_code = s.customer_code
+WHERE 
+	find_in_set(s.customer_code, in_customer_codes) >0
+group by s.date
+order by s.date asc;
+END
+
+-----------------------------------------------------------
 
 **********FUNCTION TO GET FISCAL YEAR**********
 CREATE DEFINER=`root`@`localhost` FUNCTION `get_fiscal_year`(
@@ -44,6 +58,18 @@ RETURN qtr;
 END
 
 ***********************************************************
+------------------------------------------------------------
+
+Q. generate a report of individual product sales (aggregated on a monthly basis at the product code level) for Croma India customer for FY-2021 so that I can track individual product sales and run further product analytics on it in excel.
+The report should have the following fields,
+1. Month
+2. Product Name
+3. Variant
+4. Sold Quantity
+5. Gross Price Per Item
+6. Gross Price Total
+
+*************************************************************
 
 SELECT s.date, g.fiscal_year,
       s.product_code,
