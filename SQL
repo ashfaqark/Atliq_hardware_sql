@@ -20,7 +20,43 @@ order by s.date asc;
 END
 
 -----------------------------------------------------------
+***********************************************************
 
+****************stored proc that can determine the market badge based on the following logic,
+If total sold quantity >5 million that market is considered Gold else it is Silver
+My input will be,
+• market
+• fiscal year
+Output
+• market badge
+---------------
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Get_market_badge`(
+  IN in_market VARCHAR(50),
+    IN in_fiscal_year INT,
+    OUT market_badge VARCHAR(10)
+)
+BEGIN
+ DECLARE total_sold_quantity INT;
+
+    -- Calculate the total sold quantity for the given market and fiscal year
+    SELECT SUM(s.sold_quantity)
+    INTO total_sold_quantity
+    FROM fact_sales_monthly s
+    JOIN dim_customer c 
+    ON c.customer_code = s.customer_code
+    WHERE c.market = in_market AND get_fiscal_year(s.date) = in_fiscal_year;
+
+    -- Determine the market badge based on the total sold quantity
+    IF total_sold_quantity > 5000000 THEN
+        SET market_badge = 'Gold';
+    ELSE
+        SET market_badge = 'Silver';
+    END IF;
+END
+
+
+------------------------------------------------
 **********FUNCTION TO GET FISCAL YEAR**********
 CREATE DEFINER=`root`@`localhost` FUNCTION `get_fiscal_year`(
 	calender_date date
